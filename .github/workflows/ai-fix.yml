@@ -1,0 +1,87 @@
+name: AI Fix
+
+# Fixer agent: addresses reviewer feedback on the PR's own branch. Pushing re-triggers CI → review.
+on:
+  pull_request:
+    types: [labeled]
+
+concurrency:
+  group: ai-fix-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  fix:
+    if: >-
+      vars.AI_ENABLED != 'false' &&
+      github.event.label.name == 'ai:changes-requested' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      startsWith(github.event.pull_request.head.ref, 'ai/')
+    # Only agent branches are auto-fixed. On your own branches the review is advice:
+    # fix it locally, or comment "@claude fix the review items" to have it done for you.
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read
+    env:
+      PR: ${{ github.event.pull_request.number }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install tooling
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+
+      - name: Build site data
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SITE_URL: ${{ vars.SITE_URL }}
+        run: |
+          bash scripts/telemetry/fetch.sh
+          npm run -s stats
+
+      - name: Load fixer instructions (always from main — agents/fixer.md)
+        id: brief
+        env:
+          ROLE: fixer
+          REPO: ${{ github.repository }}
+          ISSUE: ""
+          PR: "${{ github.event.pull_request.number }}"
+          BRANCH: "${{ github.event.pull_request.head.ref }}"
+          SITE_URL: ${{ vars.SITE_URL }}
+        run: |
+          git fetch --quiet origin main
+          body="$(git show "origin/main:agents/$ROLE.md")"
+          for k in REPO ISSUE PR BRANCH SITE_URL; do body="${body//\{\{$k\}\}/${!k}}"; done
+          { echo 'text<<EOF_AGENT_BRIEF'; printf '%s\n' "$body"; echo 'EOF_AGENT_BRIEF'; } >> "$GITHUB_OUTPUT"
+
+      - name: Fixer agent
+        id: claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          allowed_bots: "claude[bot]"
+          prompt: ${{ steps.brief.outputs.text }}
+          claude_args: |
+            --model ${{ vars.AI_FIXER_MODEL || vars.AI_MODEL || 'claude-sonnet-5-5' }}
+            --max-turns 60
+            --allowedTools "Read,Write,Edit,MultiEdit,Glob,Grep,LS,Bash(git:*),Bash(npm run:*),Bash(ls:*),Bash(cat:*),Bash(node:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr comment:*),Bash(gh pr edit:*),Bash(gh run view:*)"
+
+      - name: Record telemetry
+        if: always() && steps.claude.outcome != 'skipped'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node scripts/telemetry/record.mjs --role fixer --pr "$PR" --conclusion "${{ steps.claude.outcome }}"
+          bash scripts/telemetry/push.sh

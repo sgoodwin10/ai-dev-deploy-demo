@@ -1,0 +1,9 @@
+ai:ready	0e8a16	Ready for the Developer agent to pick up
+ai:in-progress	fbca04	Developer agent is working on it
+ai:review	1d76db	PR awaiting AI review
+ai:approved	0e8a16	Reviewer approved — will auto-merge
+ai:changes-requested	d93f0b	Reviewer requested changes — Fixer will address
+ai:needs-human	b60205	Agents are stuck or hit a guardrail — Samuel needed
+ai:bug	ee0701	Bug found by QA, smoke test or a human
+ai:backlog	c5def5	Good idea, not scheduled yet
+ai:opus	5319e7	Developer uses Claude Opus for this issue

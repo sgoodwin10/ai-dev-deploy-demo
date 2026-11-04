@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>How I developed this site with AI</title>
+  <meta name="description" content="A website planned, designed, built, reviewed and deployed entirely by AI agents.">
+  <style>
+    :root { color-scheme: light dark; --bg: #fafaf7; --fg: #1a1a1a; --muted: #666; }
+    @media (prefers-color-scheme: dark) { :root { --bg: #111; --fg: #eee; --muted: #999; } }
+    body { margin: 0; font: 18px/1.6 system-ui, sans-serif; background: var(--bg); color: var(--fg); }
+    main { max-width: 40rem; margin: 0 auto; padding: 4rem 1rem; }
+    h1 { font-size: 2rem; line-height: 1.2; }
+    p, li { color: var(--muted); }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>How I developed this site with AI</h1>
+    <p>This page is a placeholder. From here on, AI agents plan, design, build, review and deploy it.
+      Check back soon.</p>
+    <h2>Build log</h2>
+    <ol id="log"></ol>
+  </main>
+  <script>
+    fetch('build-log.json')
+      .then(function (r) { return r.json(); })
+      .then(function (entries) {
+        var ol = document.getElementById('log');
+        entries.forEach(function (e) {
+          var li = document.createElement('li');
+          li.textContent = e.date + ' — ' + e.title + ': ' + e.summary;
+          ol.appendChild(li);
+        });
+      });
+  </script>
+</body>
+</html>

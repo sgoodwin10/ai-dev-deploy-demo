@@ -1,0 +1,126 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: write   # telemetry branch
+  issues: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SITE_URL: ${{ vars.SITE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history for commit counts / first-commit date
+
+      - name: Version id
+        id: v
+        run: |
+          echo "id=$(date -u +%Y%m%dT%H%M%S)-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+          echo "JOB_STARTED_AT=$(date -u +%FT%TZ)" >> "$GITHUB_ENV"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+
+      - name: Build site data
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          bash scripts/telemetry/fetch.sh
+          npm run -s stats
+
+      # Screenshot this version for the evolution archive, then rebuild the data so the
+      # page being deployed already includes itself as the latest version.
+      - name: Capture this version
+        continue-on-error: true
+        env:
+          SHOT_DIR: ${{ runner.temp }}/telemetry-out/screenshots/${{ steps.v.outputs.id }}
+          SHOT_FORMAT: jpeg
+          SHOT_STRICT: "0"
+        run: npm run -s screenshot
+
+      - name: Rebuild data including this version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node scripts/telemetry/deploy-record.mjs --status success --id "${{ steps.v.outputs.id }}"
+          cp -R "$RUNNER_TEMP/telemetry-out/." .telemetry/
+          npm run -s stats
+
+      - name: Deploy to Cloudflare Pages (production)
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy site --project-name=${{ vars.CF_PAGES_PROJECT }} --branch=main
+
+      - name: Smoke test production
+        run: |
+          for i in 1 2 3 4 5 6; do
+            code=$(curl -s -o page.html -w '%{http_code}' "$SITE_URL/") || code=000
+            if [ "$code" = "200" ] && grep -qi '<h1' page.html \
+               && curl -sf "$SITE_URL/data/stats.json" | python3 -c 'import json,sys; json.load(sys.stdin)'; then
+              echo "Smoke test passed"; exit 0
+            fi
+            echo "Attempt $i: HTTP $code — retrying in 10s"; sleep 10
+          done
+          echo "::error::Smoke test failed"; exit 1
+
+      - name: Mark deploy failed
+        if: failure()
+        run: node scripts/telemetry/deploy-record.mjs --status failure --id "${{ steps.v.outputs.id }}"
+
+      - name: Save telemetry (deploy record + screenshots)
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          bash scripts/telemetry/push.sh "$RUNNER_TEMP/telemetry-out" "telemetry: deploy ${{ steps.v.outputs.id }} (${{ job.status }})"
+
+      - name: Notify success
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          MSG: ${{ github.event.head_commit.message }}
+        run: |
+          title=$(printf '%s' "$MSG" | head -n1 | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g')
+          # shellcheck disable=SC2016  # JS template literal, intentionally not expanded by bash
+          stats=$(node -e 'const t=require("./site/data/stats.json").totals; console.log(`${t.prsMerged} PRs merged · $${t.costUsd} spent · ${t.agentRuns} agent runs`)')
+          bash scripts/telegram.sh "🚀 <b>Deployed</b> to ${SITE_URL}
+          ${title}
+          📊 ${stats}"
+
+      - name: File a bug and hand it to the Developer agent
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.AI_GITHUB_PAT }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          url=$(gh issue create --repo "${{ github.repository }}" \
+            --title "Production deploy/smoke test failed at ${GITHUB_SHA::7}" \
+            --label "ai:bug" --label "ai:ready" \
+            --body "The production deploy or smoke test failed after commit ${GITHUB_SHA}.
+
+          Run log: ${RUN_URL}
+
+          Investigate the failure, fix the root cause, and add a build-log entry describing the incident honestly.")
+          bash scripts/telegram.sh "🔥 <b>Production deploy failed</b> — bug filed and assigned to the Developer agent: ${url}"

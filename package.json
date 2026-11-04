@@ -1,0 +1,18 @@
+{
+  "name": "ai-dev-deploy-demo",
+  "private": true,
+  "description": "A website built entirely by AI agents.",
+  "type": "module",
+  "scripts": {
+    "validate": "html-validate \"site/**/*.html\" && node -e \"for (const f of ['site/build-log.json','site/content/how-it-works.json']) JSON.parse(require('fs').readFileSync(f,'utf8'))\"",
+    "screenshot": "node scripts/screenshot.mjs",
+    "serve": "node scripts/serve.mjs",
+    "stats": "node scripts/build-stats.mjs",
+    "data": "bash scripts/local-data.sh",
+    "content:md": "node scripts/content-to-md.mjs"
+  },
+  "devDependencies": {
+    "html-validate": "^9.0.0",
+    "playwright": "^1.49.0"
+  }
+}

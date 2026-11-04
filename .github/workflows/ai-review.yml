@@ -1,0 +1,133 @@
+name: AI Review
+
+# Reviewer agent: runs after CI passes on a PR. Reviews the diff AND the screenshots.
+# Claude cannot formally "approve" PRs, so the verdict is a label: ai:approved / ai:changes-requested.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+
+jobs:
+  # If CI fails on an agent branch, send it straight back to the Fixer (counts as a review round).
+  ci-failed:
+    if: >-
+      vars.AI_ENABLED != 'false' &&
+      github.event.workflow_run.conclusion == 'failure' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      startsWith(github.event.workflow_run.head_branch, 'ai/') &&
+      github.event.workflow_run.pull_requests[0]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      PR: ${{ github.event.workflow_run.pull_requests[0].number }}
+      MAX_ROUNDS: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: scripts
+      - name: Send back to Fixer
+        env:
+          GH_TOKEN: ${{ secrets.AI_GITHUB_PAT }}   # PAT so the label event triggers ai-fix.yml
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          R="${{ github.repository }}"
+          n=$(gh pr view "$PR" --repo "$R" --json comments --jq '[.comments[].body | select(contains("<!-- ai-review:changes -->"))] | length')
+          if [ "$n" -ge "$MAX_ROUNDS" ]; then
+            gh pr edit "$PR" --repo "$R" --add-label "ai:needs-human"
+            bash scripts/telegram.sh "🧑‍⚖️ PR #$PR still failing CI after $MAX_ROUNDS rounds — <b>needs a human</b>."
+            exit 0
+          fi
+          gh pr comment "$PR" --repo "$R" --body "<!-- ai-review:changes -->
+          🔁 **CI failed** — fix before review.
+
+          1. Inspect the failed run with \`gh run view $RUN_ID --log-failed\` ($RUN_URL) and fix the root cause."
+          gh pr edit "$PR" --repo "$R" --remove-label "ai:changes-requested" || true
+          gh pr edit "$PR" --repo "$R" --add-label "ai:changes-requested"
+
+  review:
+    if: >-
+      vars.AI_ENABLED != 'false' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.pull_requests[0]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write   # telemetry branch
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read
+    env:
+      PR: ${{ github.event.workflow_run.pull_requests[0].number }}
+      MAX_ROUNDS: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+
+      - name: Check review-round limit
+        id: rounds
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          n=$(gh pr view "$PR" --json comments --jq '[.comments[].body | select(contains("<!-- ai-review:changes -->"))] | length')
+          echo "Previous change-request rounds: $n"
+          if [ "$n" -ge "$MAX_ROUNDS" ]; then
+            gh pr edit "$PR" --add-label "ai:needs-human"
+            bash scripts/telegram.sh "🧑‍⚖️ PR #$PR hit $MAX_ROUNDS review rounds — <b>needs a human</b>. ${{ github.server_url }}/${{ github.repository }}/pull/$PR"
+            echo "stop=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download screenshots from CI
+        if: steps.rounds.outputs.stop != 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: screenshots
+          path: screenshots
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+
+      - name: Load reviewer instructions (always from main — agents/reviewer.md)
+        id: brief
+        if: steps.rounds.outputs.stop != 'true'
+        env:
+          ROLE: reviewer
+          REPO: ${{ github.repository }}
+          ISSUE: ""
+          PR: "${{ github.event.workflow_run.pull_requests[0].number }}"
+          BRANCH: "${{ github.event.workflow_run.head_branch }}"
+          SITE_URL: ${{ vars.SITE_URL }}
+        run: |
+          git fetch --quiet origin main
+          body="$(git show "origin/main:agents/$ROLE.md")"
+          for k in REPO ISSUE PR BRANCH SITE_URL; do body="${body//\{\{$k\}\}/${!k}}"; done
+          { echo 'text<<EOF_AGENT_BRIEF'; printf '%s\n' "$body"; echo 'EOF_AGENT_BRIEF'; } >> "$GITHUB_OUTPUT"
+
+      - name: Reviewer agent
+        id: claude
+        if: steps.rounds.outputs.stop != 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          allowed_bots: "claude[bot]"
+          prompt: ${{ steps.brief.outputs.text }}
+          claude_args: |
+            --model ${{ vars.AI_REVIEWER_MODEL || vars.AI_MODEL || 'claude-sonnet-5-5' }}
+            --max-turns 30
+            --allowedTools "Read,Glob,Grep,LS,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr comment:*),Bash(gh pr edit:*),Bash(git log:*),Bash(git diff:*)"
+
+      - name: Record telemetry
+        if: always() && steps.claude.outcome != 'skipped' && steps.claude.outcome != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node scripts/telemetry/record.mjs --role reviewer --pr "$PR" --conclusion "${{ steps.claude.outcome }}"
+          bash scripts/telemetry/push.sh

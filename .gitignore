@@ -1,0 +1,8 @@
+node_modules/
+screenshots/
+.wrangler/
+.DS_Store
+.env
+site/data/
+site/evolution/
+.telemetry/

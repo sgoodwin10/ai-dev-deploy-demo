@@ -1,0 +1,107 @@
+name: AI Develop
+
+# Developer agent: picks up an issue labelled `ai:ready`, implements it, opens a PR.
+on:
+  issues:
+    types: [labeled]
+  workflow_dispatch:
+    inputs:
+      issue:
+        description: Issue number to implement
+        required: true
+
+concurrency:
+  group: ai-develop        # one developer at a time avoids merge conflicts
+  cancel-in-progress: false
+
+jobs:
+  develop:
+    if: >-
+      vars.AI_ENABLED != 'false' &&
+      (github.event_name == 'workflow_dispatch' || github.event.label.name == 'ai:ready')
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read
+    env:
+      ISSUE: ${{ github.event.issue.number || inputs.issue }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install tooling
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+
+      - name: Build site data (so the agent designs against real numbers)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SITE_URL: ${{ vars.SITE_URL }}
+        run: |
+          bash scripts/telemetry/fetch.sh
+          npm run -s stats
+
+      - name: Mark issue in progress
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh issue edit "$ISSUE" --add-label "ai:in-progress" --remove-label "ai:ready"
+
+      - name: Notify
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: bash scripts/telegram.sh "🛠️ <b>Developer</b> started issue <a href=\"${{ github.server_url }}/${{ github.repository }}/issues/$ISSUE\">#$ISSUE</a>"
+
+      - name: Load developer instructions (always from main — agents/developer.md)
+        id: brief
+        env:
+          ROLE: developer
+          REPO: ${{ github.repository }}
+          ISSUE: "${{ github.event.issue.number || inputs.issue }}"
+          PR: ""
+          BRANCH: ""
+          SITE_URL: ${{ vars.SITE_URL }}
+        run: |
+          git fetch --quiet origin main
+          body="$(git show "origin/main:agents/$ROLE.md")"
+          for k in REPO ISSUE PR BRANCH SITE_URL; do body="${body//\{\{$k\}\}/${!k}}"; done
+          { echo 'text<<EOF_AGENT_BRIEF'; printf '%s\n' "$body"; echo 'EOF_AGENT_BRIEF'; } >> "$GITHUB_OUTPUT"
+
+      - name: Developer agent
+        id: claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: ${{ steps.brief.outputs.text }}
+          claude_args: |
+            --model ${{ contains(github.event.issue.labels.*.name, 'ai:opus') && 'claude-opus-5-5' || vars.AI_DEVELOPER_MODEL || vars.AI_MODEL || 'claude-sonnet-5-5' }}
+            --max-turns 80
+            --allowedTools "Read,Write,Edit,MultiEdit,Glob,Grep,LS,Bash(git:*),Bash(npm run:*),Bash(npm install:*),Bash(ls:*),Bash(cat:*),Bash(node:*),Bash(gh issue view:*),Bash(gh issue comment:*),Bash(gh issue edit:*),Bash(gh issue create:*),Bash(gh pr create:*),Bash(gh pr view:*)"
+
+      - name: Record telemetry
+        if: always() && steps.claude.outcome != 'skipped'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node scripts/telemetry/record.mjs --role developer --issue "$ISSUE" --conclusion "${{ steps.claude.outcome }}"
+          bash scripts/telemetry/push.sh
+
+      - name: Clean up label on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          gh issue edit "$ISSUE" --add-label "ai:needs-human" --remove-label "ai:in-progress" || true
+          bash scripts/telegram.sh "⚠️ <b>Developer</b> failed on issue #$ISSUE — <a href=\"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\">run log</a>"

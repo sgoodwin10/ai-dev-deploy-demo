@@ -1,0 +1,70 @@
+name: AI Assist
+
+# Lets the repo owner steer agents in plain English by mentioning @claude in a comment:
+#   on a PR    → "@claude make the hero headline bigger and drop the gradient"  (pushes to that PR)
+#   on an issue → "@claude what would it take to add a dark-mode toggle?"       (answers in-thread)
+# Only the repo owner's comments trigger it, so strangers on this public repo can't spend your API budget.
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  assist:
+    if: >-
+      vars.AI_ENABLED != 'false' &&
+      (
+        (github.event_name != 'pull_request_review' && contains(github.event.comment.body, '@claude') && github.event.comment.user.login == github.repository_owner) ||
+        (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude') && github.event.review.user.login == github.repository_owner)
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install tooling + site data
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SITE_URL: ${{ vars.SITE_URL }}
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+          bash scripts/telemetry/fetch.sh
+          npm run -s stats
+
+      - name: Claude (responds to @claude)
+        id: claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_args: |
+            --model ${{ vars.AI_MODEL || 'claude-sonnet-5-5' }}
+            --max-turns 60
+            --append-system-prompt "You are working on a site built entirely by AI agents. The comment is from the human owner (the client). Follow CLAUDE.md strictly — including the protected-files rule and the build-log entry for any change. Run npm run validate and npm run screenshot and look at the PNGs before pushing."
+            --allowedTools "Read,Write,Edit,MultiEdit,Glob,Grep,LS,Bash(git:*),Bash(npm run:*),Bash(ls:*),Bash(cat:*),Bash(node:*),Bash(gh issue view:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh run view:*)"
+
+      - name: Record telemetry
+        if: always() && steps.claude.outcome != 'skipped'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node scripts/telemetry/record.mjs --role assistant \
+            --issue "${{ github.event.issue.pull_request && '' || github.event.issue.number }}" \
+            --pr "${{ github.event.pull_request.number || (github.event.issue.pull_request && github.event.issue.number) || '' }}" \
+            --conclusion "${{ steps.claude.outcome }}"
+          bash scripts/telemetry/push.sh

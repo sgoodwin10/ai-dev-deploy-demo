@@ -1,0 +1,159 @@
+{
+  "schema": 1,
+  "updated": "2026-11-04",
+  "note": "Owner-approved copy. Agents decide how this looks, but must not change what it says. Every section and FAQ entry must appear on the site.",
+
+  "intro": {
+    "headline": "A website built, reviewed and shipped by AI agents, with a human in charge.",
+    "summary": "Every change to this site is planned, coded, reviewed, tested and deployed by a team of AI agents running in GitHub. A human (Samuel) sets the direction, can step in at any point, and gets a Telegram message whenever something happens. All the numbers on this page come from logs the pipeline records about itself.",
+    "forLeadership": [
+      "What it is: a working experiment in handing the routine software lifecycle (plan, build, review, test, deploy) to AI agents, using normal developer tools: GitHub, pull requests, CI and Cloudflare.",
+      "The human role: deciding what to build, setting the rules the agents follow, and stepping in when an agent gets stuck. Nothing reaches production without passing automated checks and an AI code review.",
+      "Cost and speed: every agent run is metered. The live counters on this page show total spend and the typical time from idea to live.",
+      "Risk controls: agents can't push to production directly, can't change their own rules, and can be paused instantly with one switch."
+    ]
+  },
+
+  "stack": [
+    { "name": "GitHub", "role": "Where the work happens", "detail": "Code, issues (tasks) and pull requests (proposed changes). The agents coordinate through these the same way a human team would." },
+    { "name": "GitHub Actions", "role": "Runs the agents", "detail": "Each agent is a workflow that starts automatically when something happens: an issue is labelled, a PR passes its checks, a review asks for changes." },
+    { "name": "Claude (Anthropic)", "role": "The AI agents", "detail": "Each agent is Claude running with its own instructions and a limited set of tools. They run through the official Claude Code GitHub Action and use Anthropic's API." },
+    { "name": "Cloudflare Pages", "role": "Hosting", "detail": "Every PR gets its own preview URL. Merging to main deploys to production, and an automated smoke test then checks the live site." },
+    { "name": "Telegram", "role": "Notifications", "detail": "A bot messages the owner when issues are opened, PRs are reviewed or merged, deploys go live, and anything fails." }
+  ],
+
+  "team": [
+    { "role": "Planner", "oneLiner": "Decides what to build next.", "trigger": "Run on demand (a daily schedule is planned).", "does": "Reads the roadmap, the open issues and the live site, then writes 1–2 small, specific issues with acceptance criteria.", "cannot": "Edit code or open PRs. It plans; others build." },
+    { "role": "Developer", "oneLiner": "Builds one issue at a time.", "trigger": "An issue gets the ai:ready label.", "does": "Creates a branch, writes the code, runs the checks, takes screenshots of its own work and looks at them, adds a build-log entry, and opens a PR.", "cannot": "Push to main, edit the guardrail files, or merge its own work." },
+    { "role": "Reviewer", "oneLiner": "Approves or sends back every PR.", "trigger": "A PR passes its automated checks.", "does": "Reads the code changes and the screenshots (desktop and mobile, light and dark), checks them against the project rules, then approves or requests specific changes.", "cannot": "Edit code. Its instructions are always loaded from main, so a PR can't rewrite them." },
+    { "role": "Fixer", "oneLiner": "Addresses review feedback.", "trigger": "The Reviewer requests changes on an agent's PR.", "does": "Works through the Reviewer's numbered list, pushes the fixes, and the review runs again.", "cannot": "Loop forever. After 3 rounds the PR is handed to a human." },
+    { "role": "Release", "oneLiner": "Merges, deploys and checks.", "trigger": "The Reviewer approves.", "does": "Squash-merges the PR, deploys to Cloudflare, screenshots the live version, and smoke-tests it. If production breaks, it files a bug, and the Developer picks the bug up automatically.", "cannot": "Merge anything that touches the guardrail files. Those need a human." }
+  ],
+
+  "workflow": {
+    "title": "The workflow, step by step",
+    "summary": "This is the same pull-request workflow most teams already use. The only difference is who does each step. Every change goes through a branch, a PR, automated checks and a review before it reaches main. Nobody, human or AI, pushes straight to production.",
+    "stages": [
+      { "step": 1, "name": "Idea → issue", "who": "Planner agent, or a human", "trigger": "The Planner runs, or a person writes an issue.", "what": "A GitHub issue describes the goal, the acceptance criteria and design notes.", "output": "An issue.", "humanControl": "Nothing is built until the issue has the ai:ready label. Only people with write access to the repo can add it." },
+      { "step": 2, "name": "Build", "who": "Developer agent", "trigger": "Label ai:ready.", "what": "Branches as ai/issue-N-…, writes the code, runs validation, takes screenshots and checks them visually, and writes a build-log entry.", "output": "A pull request that says 'Closes #N'.", "humanControl": "Comment '@claude …' on the PR to redirect it, or add ai:needs-human to take it out of the loop." },
+      { "step": 3, "name": "Automated checks", "who": "CI (no AI)", "trigger": "The PR is opened or updated.", "what": "HTML validation, then screenshots at 375px and 1440px in light and dark mode, which fail on console errors or horizontal scroll. Then a preview deploy to Cloudflare.", "output": "Pass or fail, a preview URL, and screenshots.", "humanControl": "Open the preview link on the PR and see the change running." },
+      { "step": 4, "name": "AI code review", "who": "Reviewer agent", "trigger": "Checks pass.", "what": "Reviews the diff and the screenshots against the project rules (CLAUDE.md), accessibility basics and design quality.", "output": "Either ai:approved, or ai:changes-requested with a numbered list of fixes.", "humanControl": "The review is a normal PR comment you can read and argue with. You can override it at any time." },
+      { "step": 5, "name": "Fix loop", "who": "Fixer agent", "trigger": "ai:changes-requested on an agent branch.", "what": "Fixes each item and pushes. Steps 3 and 4 run again.", "output": "An updated PR.", "humanControl": "Capped at 3 rounds, after which it is labelled ai:needs-human and you get a Telegram ping. On a human's own branch, nothing is pushed automatically." },
+      { "step": 6, "name": "Merge", "who": "Release automation", "trigger": "ai:approved.", "what": "Squash-merges into main, unless the PR touches a guardrail file (workflows, agent instructions, telemetry scripts, the rules file). Those wait for a human to merge.", "output": "One commit on main per feature.", "humanControl": "Open the PR as a draft to get a review without a merge, or add ai:needs-human to stop it." },
+      { "step": 7, "name": "Deploy and verify", "who": "Release automation", "trigger": "A push to main.", "what": "Rebuilds the site's stats, deploys to Cloudflare, screenshots the live version for the evolution timeline, and smoke-tests production.", "output": "A live site and a Telegram '🚀 Deployed' message.", "humanControl": "If the smoke test fails, a bug issue is filed automatically and the Developer starts on it, and you are notified." }
+    ],
+    "keyPoints": [
+      "Everything is a normal GitHub pull request, so you can read, comment on and revert anything, just as you would for a human's work.",
+      "The AI reviews the AI, but the rules it reviews against are written and owned by a human, and the agents can't change them.",
+      "A human can join at any step: comment, take over a branch, block a merge, or pause everything."
+    ]
+  },
+
+  "waysToWork": {
+    "title": "How developers work with it",
+    "summary": "There are four ways in, and all of them end in the same place: a PR that gets the same automated checks and the same AI review.",
+    "paths": [
+      {
+        "id": "issue",
+        "title": "1. Hand it to the agents",
+        "bestFor": "Well-defined features and bugs you don't need to write yourself.",
+        "steps": ["Open an issue: the goal, acceptance criteria and design notes.", "Add the label ai:ready (add ai:opus too, if it's hard).", "Watch Telegram. The PR, review, merge and deploy all happen without you."],
+        "example": "gh issue create --label ai:ready --title \"Add a cost-per-day chart\" --body \"…\""
+      },
+      {
+        "id": "steer",
+        "title": "2. Steer a PR in flight",
+        "bestFor": "When the agent is close but not quite right.",
+        "steps": ["Comment on the PR: \"@claude make the headline bigger and drop the gradient\".", "Claude pushes the change to that PR.", "Checks and review run again automatically."],
+        "example": "gh pr comment 14 --body \"@claude the mobile nav overlaps the counters at 375px — fix that\"",
+        "note": "Only the repo owner's comments trigger it. Strangers on this public repo can't spend the AI budget."
+      },
+      {
+        "id": "local-agents",
+        "title": "3. Use the same agents locally",
+        "bestFor": "Working interactively in Claude Code while keeping output consistent with the pipeline.",
+        "steps": ["In Claude Code, run /ai-develop 12 (or describe the task in words).", "Run /ai-review to get the GitHub Reviewer's verdict before you push.", "Approve the push. The PR then goes through the normal pipeline."],
+        "example": "/ai-develop add a cost-per-day chart  →  /ai-review  →  push",
+        "note": "These commands load exactly the same instruction files the GitHub agents use, so there is one source of truth. Local branches are named human/… so the pipeline never pushes to them."
+      },
+      {
+        "id": "own-code",
+        "title": "4. Write it yourself, AI reviews it",
+        "bestFor": "When you want full control of the code.",
+        "steps": ["Create a branch (any name that doesn't start with ai/), code, and run npm run validate and npm run screenshot.", "Push and open a PR (add --draft if you only want a review).", "The AI Reviewer reviews your PR like anyone else's. If approved, it auto-merges. If changes are requested, fix them yourself or comment \"@claude fix the review items\"."],
+        "example": "git checkout -b human/hero-tweak … gh pr create --fill",
+        "note": "The Fixer never pushes to a human's branch on its own. On your branch, its review is advice."
+      }
+    ]
+  },
+
+  "safety": {
+    "title": "Guardrails",
+    "items": [
+      { "title": "No direct pushes to production", "detail": "main is branch-protected. Every change needs a PR and passing checks, including the agents' changes and the owner's." },
+      { "title": "Agents can't change their own rules", "detail": "Workflows, agent instructions, the rules file and the telemetry scripts are guardrail files. Auto-merge refuses any PR that touches them, so a human has to merge it." },
+      { "title": "Review instructions can't be tampered with", "detail": "Each agent's instructions are always loaded from main, never from the PR it's working on. A PR can't rewrite the Reviewer to approve itself." },
+      { "title": "Bounded loops", "detail": "At most 3 review rounds per PR, one Developer at a time, and turn limits on every agent run. When a limit is hit, a human is notified." },
+      { "title": "Spend controls", "detail": "There is a monthly spend limit on the Anthropic account. Every run's cost is logged and shown on this site. The model can be set per agent." },
+      { "title": "Public repo, private budget", "detail": "Anyone can open an issue, but only the owner can label it ai:ready or trigger @claude. Bug reports from the public don't start agents." },
+      { "title": "Kill switch", "detail": "One repository variable (AI_ENABLED=false) pauses every agent immediately. Deploys of already-merged work still run." },
+      { "title": "Secrets stay secret", "detail": "Keys live only in GitHub's encrypted secrets. Agent transcripts are scrubbed for tokens before anything is published." }
+    ]
+  },
+
+  "whenThingsGoWrong": {
+    "title": "When things go wrong",
+    "scenarios": [
+      { "scenario": "The agent's code fails the automated checks", "whatHappens": "The PR is sent straight back to the Fixer with a link to the failed run. This counts as a review round." },
+      { "scenario": "The Reviewer keeps rejecting", "whatHappens": "After 3 rounds the PR is labelled ai:needs-human and the owner gets a Telegram ping. Nothing merges." },
+      { "scenario": "The issue is unclear", "whatHappens": "The Developer comments on the issue asking for clarification, labels it ai:needs-human, and stops without guessing." },
+      { "scenario": "Production breaks after a merge", "whatHappens": "The smoke test fails, a bug issue is filed and labelled ai:ready, the Developer starts fixing it, and the owner is notified. The incident appears in the site's stats." },
+      { "scenario": "An agent tries to change a guardrail file", "whatHappens": "The PR can be reviewed, but auto-merge refuses it and labels it ai:needs-human." },
+      { "scenario": "Something needs to stop right now", "whatHappens": "Set AI_ENABLED=false. Every agent workflow skips until it's set back to true." }
+    ]
+  },
+
+  "customising": {
+    "title": "Customising the agents",
+    "layers": [
+      { "where": "agents/<role>.md", "affects": "One role, every time", "example": "\"Developer: always include a short design rationale in the PR.\"" },
+      { "where": "CLAUDE.md", "affects": "Every agent, every time", "example": "\"Total JS on first load must stay under 150 KB.\"" },
+      { "where": "The issue body", "affects": "One feature", "example": "\"Use a horizontal timeline for this one, not a vertical one.\"" },
+      { "where": "Repo variables / labels", "affects": "Which model runs", "example": "AI_DEVELOPER_MODEL, AI_REVIEWER_MODEL, …; the ai:opus label for one hard issue." }
+    ],
+    "note": "Instruction files are guardrails, so changing an agent's prompt is always a human decision that goes through a PR."
+  },
+
+  "faq": {
+    "title": "Questions asked while building this",
+    "intro": "These are the real questions asked while setting this project up, with the answers that shaped how it works.",
+    "items": [
+      { "q": "What do you need to run a fully AI-driven project?", "a": "A GitHub repo (code, issues, PRs), GitHub Actions to run the agents, an Anthropic API key for Claude, Cloudflare Pages for hosting, and a Telegram bot for notifications. A one-time setup script wires them together in about 20 minutes.", "audience": "everyone", "asked": true },
+      { "q": "Is the data rich enough to build an interactive site, not just a basic page?", "a": "Not at first, so we built a telemetry layer before the first agent ran. Every agent run records its cost, tokens, turns, tools used and a replayable step-by-step trace. Every deploy records itself and screenshots the live site. That is combined with the GitHub history of issues, PRs and reviews, and it powers every number, timeline and replay on this site.", "audience": "everyone", "asked": true },
+      { "q": "How can I make changes to the site?", "a": "There are four ways: open an issue and label it ai:ready; comment '@claude …' on a PR; use the same agents locally with /ai-develop; or write the code yourself and let the AI review it. All four end in a PR that gets the same checks and the same review.", "audience": "developers", "asked": true },
+      { "q": "Can I make changes locally, push, open a PR and have the AI review it?", "a": "Yes. Your PR gets the same CI, preview deploy and AI review as an agent's PR. If it's approved, it auto-merges (drafts are reviewed but never merged). If changes are requested, the Fixer does not push to your branch; you fix it yourself or ask '@claude fix the review items'.", "audience": "developers", "asked": true },
+      { "q": "Can I use Claude Code or Claude desktop locally and have the automation carry on?", "a": "Yes. Claude reads the project rules automatically, uses a human/… branch (so the pipeline treats it as your PR), runs the same checks and opens the PR, and then the pipeline takes over. Local sessions aren't included in the cost telemetry, but their PRs, reviews and deploys are.", "audience": "developers", "asked": true },
+      { "q": "Can I customise the prompt of the agent that writes the code?", "a": "Yes. Each agent's instructions are a plain markdown file in agents/. Edit developer.md and every future Developer run follows it. Rules for every agent go in CLAUDE.md, and instructions for one feature go in the issue. You can also choose the model per agent.", "audience": "developers", "asked": true },
+      { "q": "How do I keep local work consistent with what the AI pipeline produces?", "a": "Run the same agents locally: /ai-develop, /ai-review, /ai-fix and /ai-plan in Claude Code. They load the same instruction files, the same rules and the same checks as the GitHub agents, so there's one source of truth. Use /ai-review before pushing to see what the GitHub Reviewer will say.", "audience": "developers", "asked": true },
+      { "q": "If the AI reviews the AI, who's checking the reviewer?", "a": "The human-owned rules. The Reviewer checks every PR against CLAUDE.md and a definition of done that only a human can change. It also looks at real screenshots, not just code. Every review is a public PR comment, and anything that touches the rules themselves needs a human merge.", "audience": "developers" },
+      { "q": "What stops it from merging bad code to production?", "a": "Four layers: automated checks (validation, screenshot QA), an AI review against human-written rules, branch protection on main, and a post-deploy smoke test that files and fixes a bug automatically if production breaks. Every merge is one squash commit, so a revert is a one-liner.", "audience": "everyone" },
+      { "q": "What does it cost?", "a": "Every agent run is metered, and the live counters on this page show the running total, cost per feature and cost per agent. The Anthropic account has a hard monthly spend limit, and cheaper or stronger models can be chosen per agent.", "audience": "leadership" },
+      { "q": "Does this replace developers?", "a": "Not in this setup. The agents handle the routine loop of building, checking and shipping well-defined work. People decide what's worth building, set the standards, handle anything ambiguous or risky, and own the guardrails. The best-supported way to work is a mix: hand off the routine, steer with comments, and code the hard parts yourself with AI help.", "audience": "leadership" },
+      { "q": "Can it be stopped instantly?", "a": "Yes. One switch (AI_ENABLED=false) pauses every agent. Any single PR can be taken out of the loop with the ai:needs-human label.", "audience": "everyone" },
+      { "q": "Is it safe to run on a public repository?", "a": "Agents only start when the owner labels an issue or comments '@claude'. Outside contributors can't trigger paid runs. Secrets live in GitHub's encrypted store, and published transcripts are scrubbed for tokens.", "audience": "developers" }
+    ]
+  },
+
+  "glossary": [
+    { "term": "Issue", "meaning": "A task: a feature, bug or idea, written down in GitHub." },
+    { "term": "Pull request (PR)", "meaning": "A proposed change, reviewed before it's merged into the live code." },
+    { "term": "CI", "meaning": "Automated checks that run on every PR." },
+    { "term": "main", "meaning": "The branch that is deployed to production." },
+    { "term": "ai:ready", "meaning": "Label: the Developer agent should build this issue." },
+    { "term": "ai:approved / ai:changes-requested", "meaning": "Labels: the Reviewer agent's verdict." },
+    { "term": "ai:needs-human", "meaning": "Label: agents are stuck or hit a guardrail, and a person decides." },
+    { "term": "ai:opus", "meaning": "Label: use the strongest model for this issue." },
+    { "term": "Guardrail files", "meaning": "Workflows, agent instructions, rules and telemetry scripts. Only a human can merge changes to them." },
+    { "term": "Telemetry", "meaning": "The automatic record of every agent run and deploy that feeds this site's numbers." }
+  ]
+}

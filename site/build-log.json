@@ -1,0 +1,9 @@
+[
+  {
+    "date": "2026-11-04",
+    "issue": 0,
+    "role": "Architect",
+    "title": "The repo is born",
+    "summary": "We scaffolded the repository, the agent rules in CLAUDE.md, the roadmap and the GitHub Actions pipeline that lets AI agents plan, build, review and deploy this site. This placeholder page is the last thing a human-directed session will write here."
+  }
+]

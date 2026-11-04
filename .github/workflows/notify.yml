@@ -1,0 +1,71 @@
+name: Notify
+
+# Telegram feed of what the agents are doing.
+on:
+  issues:
+    types: [opened, closed]
+  pull_request:
+    types: [opened, closed, labeled]
+  workflow_run:
+    workflows: [CI, AI Develop, AI Review, AI Fix, AI Auto-merge]
+    types: [completed]
+
+permissions:
+  contents: read
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: scripts
+
+      - name: Build message
+        id: msg
+        env:
+          EVENT: ${{ github.event_name }}
+          ACTION: ${{ github.event.action }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_URL: ${{ github.event.issue.html_url }}
+          ISSUE_NUM: ${{ github.event.issue.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_NUM: ${{ github.event.pull_request.number }}
+          PR_MERGED: ${{ github.event.pull_request.merged }}
+          LABEL: ${{ github.event.label.name }}
+          ACTOR: ${{ github.actor }}
+          WR_NAME: ${{ github.event.workflow_run.name }}
+          WR_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          WR_URL: ${{ github.event.workflow_run.html_url }}
+        run: |
+          esc() { printf '%s' "$1" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g'; }
+          m=""
+          case "$EVENT/$ACTION" in
+            issues/opened)  m="📝 <b>New issue</b> #$ISSUE_NUM by $ACTOR: <a href=\"$ISSUE_URL\">$(esc "$ISSUE_TITLE")</a>" ;;
+            issues/closed)  m="✔️ Issue #$ISSUE_NUM closed: $(esc "$ISSUE_TITLE")" ;;
+            pull_request/opened) m="📬 <b>PR opened</b> #$PR_NUM: <a href=\"$PR_URL\">$(esc "$PR_TITLE")</a>" ;;
+            pull_request/closed)
+              if [ "$PR_MERGED" = "true" ]; then m="🔀 <b>Merged</b> #$PR_NUM: $(esc "$PR_TITLE")"; fi ;;
+            pull_request/labeled)
+              case "$LABEL" in
+                ai:approved) m="✅ Reviewer <b>approved</b> #$PR_NUM" ;;
+                ai:changes-requested) m="🔁 Reviewer <b>requested changes</b> on <a href=\"$PR_URL\">#$PR_NUM</a>" ;;
+                ai:needs-human) m="🧑‍⚖️ <b>Needs you:</b> <a href=\"$PR_URL\">#$PR_NUM</a>" ;;
+              esac ;;
+            workflow_run/completed)
+              if [ "$WR_CONCLUSION" = "failure" ]; then m="❌ <b>$(esc "$WR_NAME")</b> failed — <a href=\"$WR_URL\">log</a>"; fi ;;
+          esac
+          {
+            echo "text<<EOF_MSG"
+            echo "$m"
+            echo "EOF_MSG"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Send
+        if: steps.msg.outputs.text != ''
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TEXT: ${{ steps.msg.outputs.text }}
+        run: bash scripts/telegram.sh "$TEXT"

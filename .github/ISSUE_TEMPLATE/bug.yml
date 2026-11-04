@@ -1,0 +1,17 @@
+name: Bug
+description: Something is broken on the site
+# Deliberately NOT auto-labelled ai:ready: this repo is public, and only the owner should
+# decide what the agents spend money on. Add `ai:ready` yourself to hand it to the Developer.
+labels: ["ai:bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What's wrong
+      description: What you saw, where (URL, device, light/dark), and what you expected.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce

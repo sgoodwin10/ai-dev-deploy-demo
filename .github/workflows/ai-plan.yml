@@ -1,0 +1,58 @@
+name: AI Plan
+
+# Planner agent: turns ROADMAP.md into small `ai:ready` issues.
+# Run manually for now. Phase 3 moves the schedule to a Claude Managed Agent;
+# until then, uncomment `schedule` to run it here daily.
+on:
+  workflow_dispatch:
+  # schedule:
+  #   - cron: "0 22 * * *"   # 09:00 Sydney (AEDT)
+
+jobs:
+  plan:
+    if: vars.AI_ENABLED != 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write   # telemetry branch
+      issues: write
+      pull-requests: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Load planner instructions (always from main — agents/planner.md)
+        id: brief
+        env:
+          ROLE: planner
+          REPO: ${{ github.repository }}
+          ISSUE: ""
+          PR: ""
+          BRANCH: ""
+          SITE_URL: ${{ vars.SITE_URL }}
+        run: |
+          git fetch --quiet origin main
+          body="$(git show "origin/main:agents/$ROLE.md")"
+          for k in REPO ISSUE PR BRANCH SITE_URL; do body="${body//\{\{$k\}\}/${!k}}"; done
+          { echo 'text<<EOF_AGENT_BRIEF'; printf '%s\n' "$body"; echo 'EOF_AGENT_BRIEF'; } >> "$GITHUB_OUTPUT"
+
+      - name: Planner agent
+        id: claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # PAT (not the Claude app token) so the `ai:ready` label it applies triggers ai-develop.yml
+          github_token: ${{ secrets.AI_GITHUB_PAT }}
+          prompt: ${{ steps.brief.outputs.text }}
+          claude_args: |
+            --model ${{ vars.AI_PLANNER_MODEL || 'claude-opus-5-5' }}
+            --max-turns 25
+            --allowedTools "Read,Glob,Grep,LS,WebFetch,Bash(gh issue list:*),Bash(gh issue view:*),Bash(gh issue create:*),Bash(gh pr list:*),Bash(gh pr view:*)"
+
+      - name: Record telemetry
+        if: always() && steps.claude.outcome != 'skipped'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node scripts/telemetry/record.mjs --role planner --conclusion "${{ steps.claude.outcome }}"
+          bash scripts/telemetry/push.sh

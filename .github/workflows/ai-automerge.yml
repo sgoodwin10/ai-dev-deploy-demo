@@ -1,0 +1,40 @@
+name: AI Auto-merge
+
+# When the reviewer labels a PR ai:approved, squash-merge it.
+# Uses AI_GITHUB_PAT (not GITHUB_TOKEN) so the resulting push to main triggers deploy.yml.
+on:
+  pull_request:
+    types: [labeled]
+
+jobs:
+  merge:
+    if: >-
+      vars.AI_ENABLED != 'false' &&
+      github.event.label.name == 'ai:approved' &&
+      !github.event.pull_request.draft &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: scripts
+
+      - name: Guardrail — refuse PRs touching protected files
+        env:
+          GH_TOKEN: ${{ secrets.AI_GITHUB_PAT }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          files=$(gh pr view "$PR" --repo "${{ github.repository }}" --json files --jq '.files[].path')
+          if echo "$files" | grep -Eq '^(\.github/|\.claude/|site/content/|CLAUDE\.md$|docs/DATA\.md$|agents/|scripts/(bootstrap\.sh|build-stats\.mjs|telegram\.sh|telemetry/))'; then
+            gh pr edit "$PR" --repo "${{ github.repository }}" --add-label "ai:needs-human"
+            echo "::error::PR touches protected files; needs a human."
+            exit 1
+          fi
+
+      - name: Squash-merge
+        env:
+          GH_TOKEN: ${{ secrets.AI_GITHUB_PAT }}
+          PR: ${{ github.event.pull_request.number }}
+        run: gh pr merge "$PR" --repo "${{ github.repository }}" --squash --delete-branch
