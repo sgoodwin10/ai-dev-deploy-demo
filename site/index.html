@@ -5,34 +5,103 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>How I developed this site with AI</title>
   <meta name="description" content="A website planned, designed, built, reviewed and deployed entirely by AI agents.">
-  <style>
-    :root { color-scheme: light dark; --bg: #fafaf7; --fg: #1a1a1a; --muted: #666; }
-    @media (prefers-color-scheme: dark) { :root { --bg: #111; --fg: #eee; --muted: #999; } }
-    body { margin: 0; font: 18px/1.6 system-ui, sans-serif; background: var(--bg); color: var(--fg); }
-    main { max-width: 40rem; margin: 0 auto; padding: 4rem 1rem; }
-    h1 { font-size: 2rem; line-height: 1.2; }
-    p, li { color: var(--muted); }
-  </style>
+  <meta name="color-scheme" content="light dark">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <main>
-    <h1>How I developed this site with AI</h1>
-    <p>This page is a placeholder. From here on, AI agents plan, design, build, review and deploy it.
-      Check back soon.</p>
-    <h2>Build log</h2>
-    <ol id="log"></ol>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="top">
+    <a class="brand" href="#top"><span class="dot" aria-hidden="true"></span>ai-dev-deploy-demo</a>
+    <nav aria-label="Sections">
+      <a href="#team">Team</a>
+      <a href="#workflow">Workflow</a>
+      <a href="#ways">Ways to work</a>
+      <a href="#guardrails">Guardrails</a>
+      <a href="#faq">FAQ</a>
+      <a href="#log">Build log</a>
+    </nav>
+    <button type="button" id="theme" class="btn">Switch theme</button>
+  </header>
+
+  <main id="main">
+    <section class="hero" id="top" aria-labelledby="h-hero">
+      <p class="kicker"><span class="live" aria-hidden="true"></span> Mission control · written by the thing it describes</p>
+      <h1 id="h-hero">How I developed this site <span class="accent">with&nbsp;AI</span></h1>
+      <p class="headline" id="intro-headline">A website built, reviewed and shipped by AI agents, with a human in charge.</p>
+      <p class="lede" id="intro-summary"></p>
+      <ul class="counters" id="counters"></ul>
+      <p class="stamp" id="stamp"></p>
+    </section>
+
+    <section aria-labelledby="h-lead" class="band">
+      <h2 id="h-lead" class="eyebrow">For leadership</h2>
+      <ol class="lead-list" id="lead-list"></ol>
+    </section>
+
+    <section id="team" aria-labelledby="h-team">
+      <h2 id="h-team"><span class="num">01</span> The team</h2>
+      <p class="sub">Five roles, each with its own instructions and a limited set of tools. Numbers are live from the pipeline's own logs.</p>
+      <div class="team" id="team-grid"></div>
+    </section>
+
+    <section id="workflow" aria-labelledby="h-workflow">
+      <h2 id="h-workflow"><span class="num">02</span> <span id="wf-title">The workflow, step by step</span></h2>
+      <p class="sub" id="wf-summary"></p>
+      <ol class="flow" id="flow"></ol>
+      <ul class="keypoints" id="keypoints"></ul>
+    </section>
+
+    <section id="ways" aria-labelledby="h-ways">
+      <h2 id="h-ways"><span class="num">03</span> <span id="ways-title">How developers work with it</span></h2>
+      <p class="sub" id="ways-summary"></p>
+      <div class="ways" id="ways-grid"></div>
+    </section>
+
+    <section id="stack" aria-labelledby="h-stack">
+      <h2 id="h-stack"><span class="num">04</span> The stack</h2>
+      <dl class="stack" id="stack-list"></dl>
+    </section>
+
+    <section id="guardrails" aria-labelledby="h-guard">
+      <h2 id="h-guard"><span class="num">05</span> <span id="guard-title">Guardrails</span></h2>
+      <ul class="guards" id="guards"></ul>
+    </section>
+
+    <section id="wrong" aria-labelledby="h-wrong">
+      <h2 id="h-wrong"><span class="num">06</span> <span id="wrong-title">When things go wrong</span></h2>
+      <ul class="scen" id="scen"></ul>
+    </section>
+
+    <section id="custom" aria-labelledby="h-custom">
+      <h2 id="h-custom"><span class="num">07</span> <span id="custom-title">Customising the agents</span></h2>
+      <ul class="layers" id="layers"></ul>
+      <p class="sub" id="custom-note"></p>
+    </section>
+
+    <section id="faq" aria-labelledby="h-faq">
+      <h2 id="h-faq"><span class="num">08</span> <span id="faq-title">Questions asked while building this</span></h2>
+      <p class="sub" id="faq-intro"></p>
+      <div class="filters" role="group" aria-label="Filter questions by audience" id="faq-filters"></div>
+      <div id="faq-list"></div>
+    </section>
+
+    <section id="glossary" aria-labelledby="h-gloss">
+      <h2 id="h-gloss"><span class="num">09</span> Glossary</h2>
+      <dl class="gloss" id="gloss"></dl>
+    </section>
+
+    <section id="log" aria-labelledby="h-log">
+      <h2 id="h-log"><span class="num">10</span> Build log</h2>
+      <p class="sub">One entry per pull request, newest first, written by the agent that made the change.</p>
+      <ol class="log" id="log-list"></ol>
+    </section>
+
+    <p id="load-error" class="notice" role="status" hidden></p>
   </main>
-  <script>
-    fetch('build-log.json')
-      .then(function (r) { return r.json(); })
-      .then(function (entries) {
-        var ol = document.getElementById('log');
-        entries.forEach(function (e) {
-          var li = document.createElement('li');
-          li.textContent = e.date + ' — ' + e.title + ': ' + e.summary;
-          ol.appendChild(li);
-        });
-      });
-  </script>
+
+  <footer class="foot">
+    <p>Built by AI agents, supervised by a human. <a id="repo-link" href="https://github.com/sgoodwin10/ai-dev-deploy-demo">Source on GitHub</a></p>
+  </footer>
+  <script src="app.js"></script>
 </body>
 </html>

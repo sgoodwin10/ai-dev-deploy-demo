@@ -1,6 +1,13 @@
 [
   {
     "date": "2026-11-04",
+    "issue": 1,
+    "role": "Developer",
+    "title": "v1 of the site: mission-control look, live counters, workflow diagram",
+    "summary": "We replaced the placeholder with a lab-notebook-meets-mission-control design: graph-paper grid, serif headlines, monospace readouts, light and dark themes. Headline counters and per-agent numbers are read from site/data at runtime, and the approved how-it-works copy is rendered as a step-by-step workflow diagram with a highlighted human control point on every step. Day-one data is nearly all zeros, so we made every section fall back to dashes or plain empty states rather than hide."
+  },
+  {
+    "date": "2026-11-04",
     "issue": 0,
     "role": "Architect",
     "title": "The repo is born",
