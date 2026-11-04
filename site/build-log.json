@@ -1,6 +1,13 @@
 [
   {
     "date": "2026-11-04",
+    "issue": 5,
+    "role": "Developer",
+    "title": "A guide to branches, labels and local git commands",
+    "summary": "We added a closing section that shows how to push your own work and choose the outcome: review and auto-deploy, review only via a draft PR, or hand the whole thing to the agents with an issue label. The request asked about git tags, but we read the workflows and nothing is triggered by tags: the pipeline runs on branch prefixes, draft status and ai:* labels, so the section says that plainly. One caveat: we could only view the screenshots at thumbnail size, so the layout was checked less closely than usual."
+  },
+  {
+    "date": "2026-11-04",
     "issue": 3,
     "role": "Developer",
     "title": "Navigation highlights where you are on the page",
