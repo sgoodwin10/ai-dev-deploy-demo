@@ -1,0 +1,40 @@
+{
+  "schema": 1,
+  "id": "20261104T092501-reviewer-41807180645-1",
+  "role": "reviewer",
+  "workflow": "AI Review",
+  "runId": 41807180645,
+  "runUrl": "https://github.com/sgoodwin10/ai-dev-deploy-demo/actions/runs/41807180645",
+  "recordedAt": "2026-11-04T09:25:01.642Z",
+  "issue": null,
+  "pr": 6,
+  "sha": "24481df6a347de17101fcaa9e5e0f047556da94c",
+  "conclusion": "success",
+  "model": "claude-sonnet-5-5",
+  "costUsd": 0.0617,
+  "durationMs": 23205,
+  "apiDurationMs": 17498,
+  "turns": 8,
+  "tokens": {
+    "input": 10,
+    "output": 1585,
+    "cacheRead": 92901,
+    "cacheWrite": 14555
+  },
+  "toolCalls": 5,
+  "toolCounts": {
+    "Bash": 3,
+    "Read": 2
+  },
+  "excerpts": [
+    {
+      "label": "opening",
+      "text": "I approved PR #6 and labelled it `ai:approved`. The approval comment is posted on the PR.\n\n- **Scope and rules:** The PR touches only `site/index.html`, `site/style.css` and `site/build-log.json`. It has no guardrail edits, secrets or new JavaScript.\n- **Accuracy:** The section matches the workflows. Auto-merge skips drafts and the Fixer only runs on `ai/` branches. A guardrail hit adds `ai:needs-human`. I only read those two workflow files for this. I did not check the claims about `ai:opus` a…"
+    },
+    {
+      "label": "final",
+      "text": "I approved PR #6 and labelled it `ai:approved`. The approval comment is posted on the PR.\n\n- **Scope and rules:** The PR touches only `site/index.html`, `site/style.css` and `site/build-log.json`. It has no guardrail edits, secrets or new JavaScript.\n- **Accuracy:** The section matches the workflows. Auto-merge skips drafts and the Fixer only runs on `ai/` branches. A guardrail hit adds `ai:needs-human`. I only read those two workflow files for this. I did not check the claims about `ai:opus` and `ai:backlog`, or that the AI review runs on draft PRs.\n- **Build log:** The entry is present and honest. It says the request asked about git tags but the pipeline doesn't use them, and it admits th…"
+    }
+  ],
+  "verdict": null
+}
