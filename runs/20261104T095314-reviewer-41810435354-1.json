@@ -1,0 +1,41 @@
+{
+  "schema": 1,
+  "id": "20261104T095314-reviewer-41810435354-1",
+  "role": "reviewer",
+  "workflow": "AI Review",
+  "runId": 41810435354,
+  "runUrl": "https://github.com/sgoodwin10/ai-dev-deploy-demo/actions/runs/41810435354",
+  "recordedAt": "2026-11-04T09:53:14.837Z",
+  "issue": null,
+  "pr": 7,
+  "sha": "f1bdb583f33b97449ef7c642d7e05e165be62821",
+  "conclusion": "success",
+  "model": "claude-sonnet-5-5",
+  "costUsd": 0.0579,
+  "durationMs": 20128,
+  "apiDurationMs": 14934,
+  "turns": 12,
+  "tokens": {
+    "input": 10,
+    "output": 1509,
+    "cacheRead": 85615,
+    "cacheWrite": 13601
+  },
+  "toolCalls": 7,
+  "toolCounts": {
+    "Bash": 2,
+    "Read": 4,
+    "Grep": 1
+  },
+  "excerpts": [
+    {
+      "label": "opening",
+      "text": "I approved PR #7. I posted the approval comment and added the `ai:approved` label.\n\nThe PR changes one line in `site/index.html`, renaming the theme button from \"Switch theme\" to \"Change theme\". It touches no guardrail files, workflows or secrets. The old label doesn't appear anywhere else in `site/`.\n\nThe four screenshots were 12,407 and 22,600 pixels tall and shrank to thumbnails when I opened them. I could only check that nothing looked broken. I couldn't judge spacing, typography or contras…"
+    },
+    {
+      "label": "final",
+      "text": "I approved PR #7. I posted the approval comment and added the `ai:approved` label.\n\nThe PR changes one line in `site/index.html`, renaming the theme button from \"Switch theme\" to \"Change theme\". It touches no guardrail files, workflows or secrets. The old label doesn't appear anywhere else in `site/`.\n\nThe four screenshots were 12,407 and 22,600 pixels tall and shrank to thumbnails when I opened them. I could only check that nothing looked broken. I couldn't judge spacing, typography or contrast in any detail.\n\nThe comment lists two non-blocking suggestions:\n- **Build-log entry:** none was added. For a human PR that's a suggestion, so I included a draft entry.\n- **Theme toggle:** it could s…"
+    }
+  ],
+  "verdict": null
+}
