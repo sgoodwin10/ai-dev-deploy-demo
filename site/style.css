@@ -156,4 +156,15 @@ details .ans { padding: 0 1rem 1rem; margin: 0; max-width: 50rem; }
 .foot { border-top: 1px solid var(--line); padding: 1.5rem 1rem; text-align: center; font: .8rem var(--mono); color: var(--muted); background: var(--bg); }
 .foot p { margin: 0; }
 
+/* Git guide */
+.gh { font-size: 1.15rem; margin: 2rem 0 .8rem; }
+.way h4 { margin: 0; font-size: 1.2rem; }
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); }
+.gt { border-collapse: collapse; width: 100%; font-size: .92rem; background: var(--panel); }
+.gt th, .gt td { text-align: left; vertical-align: top; padding: .55rem .7rem; border-bottom: 1px solid var(--line); }
+.gt thead th { font: .7rem var(--mono); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.gt tbody th { font-weight: 600; }
+.gt code { overflow-wrap: anywhere; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }

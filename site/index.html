@@ -19,6 +19,7 @@
       <a href="#guardrails">Guardrails</a>
       <a href="#faq">FAQ</a>
       <a href="#log">Build log</a>
+      <a href="#git">Git guide</a>
     </nav>
     <button type="button" id="theme" class="btn">Switch theme</button>
   </header>
@@ -94,6 +95,74 @@
       <h2 id="h-log"><span class="num">10</span> Build log</h2>
       <p class="sub">One entry per pull request, newest first, written by the agent that made the change.</p>
       <ol class="log" id="log-list"></ol>
+    </section>
+
+    <section id="git" aria-labelledby="h-git">
+      <h2 id="h-git"><span class="num">11</span> Branches, labels &amp; git commands</h2>
+      <p class="sub">Working on your own machine? What happens to your push depends on three things: the branch name, whether the PR is a draft, and which labels are on it. Nothing here is triggered by git tags &mdash; <strong>GitHub labels</strong> are the &ldquo;tags&rdquo; that drive the agents.</p>
+
+      <h3 class="gh">Pick your outcome</h3>
+      <div class="ways">
+        <article class="card way">
+          <h4>Review, then auto-deploy</h4>
+          <p>Open a normal (non-draft) PR. After CI passes the AI Reviewer reviews it; if it approves, it adds <code>ai:approved</code>, auto-merge squash-merges, and the merge to <code>main</code> deploys.</p>
+          <pre>git checkout -b human/my-change
+git add -A &amp;&amp; git commit -m "Describe the change"
+git push -u origin HEAD
+gh pr create --base main --fill</pre>
+        </article>
+        <article class="card way">
+          <h4>AI review only &mdash; no deploy</h4>
+          <p>Open the PR as a <strong>draft</strong>. CI and the AI review still run, but auto-merge skips drafts, so nothing ships. Mark it ready (<code>gh pr ready</code>) when you want it to go live.</p>
+          <pre>git push -u origin HEAD
+gh pr create --base main --fill --draft
+# later, to allow merge &amp; deploy:
+gh pr ready</pre>
+        </article>
+        <article class="card way">
+          <h4>Review, but you decide on merging</h4>
+          <p>Stay on a draft PR and merge it yourself once you are happy with the review. Changing protected files (<code>.github/</code>, <code>agents/</code>, <code>site/content/</code>, <code>CLAUDE.md</code>&hellip;) also stops auto-merge: the PR gets <code>ai:needs-human</code> and only you can merge it.</p>
+          <pre>gh pr merge --squash --delete-branch</pre>
+        </article>
+        <article class="card way">
+          <h4>Let the agents do it all</h4>
+          <p>Don&rsquo;t write code: file an issue and label it <code>ai:ready</code>. The Developer opens an <code>ai/issue-N-slug</code> branch and PR, and the pipeline takes it from there.</p>
+          <pre>gh issue create --label ai:ready \
+  --title "Add a chart" --body "&hellip;"</pre>
+        </article>
+      </div>
+
+      <h3 class="gh">Branch naming</h3>
+      <div class="tablewrap">
+        <table class="gt">
+          <caption class="sr">Branch prefixes and what they mean</caption>
+          <thead><tr><th scope="col">Branch</th><th scope="col">Who owns it</th><th scope="col">What the pipeline does</th></tr></thead>
+          <tbody>
+            <tr><th scope="row"><code>human/&lt;slug&gt;</code></th><td>You</td><td>CI and AI review run. Review comments are advice: the Fixer does <em>not</em> push to your branch. Reply <code>@claude fix the review items</code> if you want it to.</td></tr>
+            <tr><th scope="row"><code>ai/issue-&lt;N&gt;-&lt;slug&gt;</code></th><td>An agent</td><td>CI, review, automatic fixes after a rejection, merge and deploy. <strong>Don&rsquo;t use this prefix yourself</strong>: the Fixer would start pushing to your branch.</td></tr>
+            <tr><th scope="row"><code>main</code></th><td>Nobody directly</td><td>Never push here. Every merge to it triggers the deploy and smoke test.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="gh">Labels and what they do</h3>
+      <div class="tablewrap">
+        <table class="gt">
+          <caption class="sr">Labels used by the pipeline and their effects</caption>
+          <thead><tr><th scope="col">Label</th><th scope="col">Put on</th><th scope="col">Effect</th></tr></thead>
+          <tbody>
+            <tr><th scope="row"><code>ai:ready</code></th><td>Issue (you)</td><td>Starts the Developer agent.</td></tr>
+            <tr><th scope="row"><code>ai:opus</code></th><td>Issue (you)</td><td>Use the larger model for a hard task.</td></tr>
+            <tr><th scope="row"><code>ai:in-progress</code></th><td>Issue (automatic)</td><td>The Developer is working on it.</td></tr>
+            <tr><th scope="row"><code>ai:approved</code></th><td>PR (Reviewer)</td><td>Triggers squash-merge, then deploy.</td></tr>
+            <tr><th scope="row"><code>ai:changes-requested</code></th><td>PR (Reviewer)</td><td>On <code>ai/</code> branches, starts the Fixer. On your own branches it is just a verdict.</td></tr>
+            <tr><th scope="row"><code>ai:needs-human</code></th><td>Issue or PR (automatic)</td><td>The agents are stuck or a guardrail was hit: your move.</td></tr>
+            <tr><th scope="row"><code>ai:bug</code></th><td>Issue (automatic)</td><td>Filed with <code>ai:ready</code> when a deploy or smoke test fails, so the agents fix it.</td></tr>
+            <tr><th scope="row"><code>ai:backlog</code></th><td>Issue</td><td>Parked follow-up work. Agents ignore it until it becomes <code>ai:ready</code>.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="sub">Kill switch: set the repository variable <code>AI_ENABLED</code> to <code>false</code> and every AI workflow skips.</p>
     </section>
 
     <p id="load-error" class="notice" role="status" hidden></p>
