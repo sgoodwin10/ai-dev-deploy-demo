@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "id": "20261104T095334-8e11580",
+  "sha": "8e11580aa9fcadaebe10161f216abb6de2d9b4e0",
+  "title": "Changed Wording",
+  "pr": 7,
+  "status": "success",
+  "committedAt": "2026-11-04T20:53:22+11:00",
+  "startedAt": "2026-11-04T09:53:34Z",
+  "finishedAt": "2026-11-04T09:54:22.526Z",
+  "url": "https://ai-dev-deploy-demo.pages.dev",
+  "runUrl": "https://github.com/sgoodwin10/ai-dev-deploy-demo/actions/runs/41810545171",
+  "images": [
+    "desktop-dark.jpg",
+    "desktop.jpg",
+    "mobile-dark.jpg",
+    "mobile.jpg"
+  ]
+}
