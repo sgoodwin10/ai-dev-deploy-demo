@@ -1,0 +1,40 @@
+{
+  "schema": 1,
+  "id": "20261104T060617-reviewer-41783247890-1",
+  "role": "reviewer",
+  "workflow": "AI Review",
+  "runId": 41783247890,
+  "runUrl": "https://github.com/sgoodwin10/ai-dev-deploy-demo/actions/runs/41783247890",
+  "recordedAt": "2026-11-04T06:06:17.602Z",
+  "issue": null,
+  "pr": 2,
+  "sha": "23dc5114fc84432f7f68aa89bb757d7e555a42e3",
+  "conclusion": "success",
+  "model": "claude-sonnet-5-5",
+  "costUsd": 0.0612,
+  "durationMs": 20607,
+  "apiDurationMs": 16959,
+  "turns": 12,
+  "tokens": {
+    "input": 10,
+    "output": 1854,
+    "cacheRead": 88228,
+    "cacheWrite": 13447
+  },
+  "toolCalls": 7,
+  "toolCounts": {
+    "Bash": 3,
+    "Read": 4
+  },
+  "excerpts": [
+    {
+      "label": "opening",
+      "text": "I approved PR #2 and added the `ai:approved` label. I also posted the approval comment.\n\n- **Rules:** The PR only touches `site/index.html`, `style.css`, `app.js` and `build-log.json`. There are no workflow or guardrail edits, no secrets, no build step and no external libraries. The body has `Closes #1`.\n- **Build log:** The entry is present and well written.\n- **Copy and data:** `how-it-works.json` is loaded at runtime. I took the PR's word that every section and FAQ entry is rendered, and I d…"
+    },
+    {
+      "label": "final",
+      "text": "I approved PR #2 and added the `ai:approved` label. I also posted the approval comment.\n\n- **Rules:** The PR only touches `site/index.html`, `style.css`, `app.js` and `build-log.json`. There are no workflow or guardrail edits, no secrets, no build step and no external libraries. The body has `Closes #1`.\n- **Build log:** The entry is present and well written.\n- **Copy and data:** `how-it-works.json` is loaded at runtime. I took the PR's word that every section and FAQ entry is rendered, and I didn't check that against the code. Day-one zero data falls back to dashes or empty states, going by the screenshots and the PR description.\n- **Accessibility:** Reduced motion is respected, and there…"
+    }
+  ],
+  "verdict": null
+}
