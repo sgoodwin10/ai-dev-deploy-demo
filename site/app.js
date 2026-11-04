@@ -268,3 +268,29 @@
     renderLog(log, features);
   });
 })();
+
+// Scroll-spy: highlight the nav link for the section currently being read.
+(function () {
+  'use strict';
+  var links = Array.prototype.slice.call(document.querySelectorAll('.top nav a[href^="#"]'));
+  if (!links.length) return;
+  var targets = links.map(function (a) { return document.getElementById(a.getAttribute('href').slice(1)); });
+  var ticking = false;
+  function update() {
+    ticking = false;
+    var line = 120, active = -1;
+    for (var i = 0; i < targets.length; i++) {
+      if (targets[i] && targets[i].getBoundingClientRect().top <= line) active = i;
+    }
+    // At the very bottom of the page the last section wins, even if it is short.
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) active = links.length - 1;
+    links.forEach(function (a, i) {
+      if (i === active) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current');
+    });
+  }
+  function onScroll() { if (!ticking) { ticking = true; requestAnimationFrame(update); } }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll);
+  window.addEventListener('load', update);
+  update();
+})();

@@ -1,6 +1,13 @@
 [
   {
     "date": "2026-11-04",
+    "issue": 3,
+    "role": "Developer",
+    "title": "Navigation highlights where you are on the page",
+    "summary": "We added a small scroll-spy so the nav link for the section being read turns orange with an underline, and hover gets the same treatment. The sections are rendered from JSON after load, so instead of observing fixed positions we measure on scroll; the current link is also exposed with aria-current for screen readers."
+  },
+  {
+    "date": "2026-11-04",
     "issue": 1,
     "role": "Developer",
     "title": "v1 of the site: mission-control look, live counters, workflow diagram",
