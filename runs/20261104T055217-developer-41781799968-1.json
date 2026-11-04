@@ -1,0 +1,37 @@
+{
+  "schema": 1,
+  "id": "20261104T055217-developer-41781799968-1",
+  "role": "developer",
+  "workflow": "AI Develop",
+  "runId": 41781799968,
+  "runUrl": "https://github.com/sgoodwin10/ai-dev-deploy-demo/actions/runs/41781799968",
+  "recordedAt": "2026-11-04T05:52:17.870Z",
+  "issue": 1,
+  "pr": null,
+  "sha": "23dc5114fc84432f7f68aa89bb757d7e555a42e3",
+  "conclusion": "failure",
+  "model": "claude-sonnet-5-5",
+  "costUsd": 0,
+  "durationMs": 438,
+  "apiDurationMs": 0,
+  "turns": 1,
+  "tokens": {
+    "input": 0,
+    "output": 0,
+    "cacheRead": 0,
+    "cacheWrite": 0
+  },
+  "toolCalls": 0,
+  "toolCounts": {},
+  "excerpts": [
+    {
+      "label": "opening",
+      "text": "Credit balance is too low"
+    },
+    {
+      "label": "final",
+      "text": "Credit balance is too low"
+    }
+  ],
+  "verdict": null
+}
