@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "id": "20261104T053755-23dc511",
+  "sha": "23dc5114fc84432f7f68aa89bb757d7e555a42e3",
+  "title": "Scaffold: agent rules, roadmap, pipelines",
+  "pr": null,
+  "status": "success",
+  "committedAt": "2026-11-04T16:15:08+11:00",
+  "startedAt": "2026-11-04T05:37:55Z",
+  "finishedAt": "2026-11-04T05:38:32.351Z",
+  "url": "https://ai-dev-deploy-demo.pages.dev",
+  "runUrl": "https://github.com/sgoodwin10/ai-dev-deploy-demo/actions/runs/41780424189"
+}
