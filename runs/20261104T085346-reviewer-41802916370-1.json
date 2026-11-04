@@ -1,0 +1,40 @@
+{
+  "schema": 1,
+  "id": "20261104T085346-reviewer-41802916370-1",
+  "role": "reviewer",
+  "workflow": "AI Review",
+  "runId": 41802916370,
+  "runUrl": "https://github.com/sgoodwin10/ai-dev-deploy-demo/actions/runs/41802916370",
+  "recordedAt": "2026-11-04T08:53:46.099Z",
+  "issue": null,
+  "pr": 4,
+  "sha": "716882bf925295be2945fdfb610535b88fc4d4d0",
+  "conclusion": "success",
+  "model": "claude-sonnet-5-5",
+  "costUsd": 0.0603,
+  "durationMs": 20005,
+  "apiDurationMs": 15530,
+  "turns": 10,
+  "tokens": {
+    "input": 10,
+    "output": 1565,
+    "cacheRead": 90330,
+    "cacheWrite": 14161
+  },
+  "toolCalls": 6,
+  "toolCounts": {
+    "Bash": 3,
+    "Read": 3
+  },
+  "excerpts": [
+    {
+      "label": "opening",
+      "text": "I approved PR #4 and moved its label from `ai:changes-requested` to `ai:approved`. I posted an approval comment that explains why.\n\nI read the diff and the four screenshots, but I didn't run `npm run validate` or the scroll-spy itself. The screenshots are full-page captures, so they don't show the highlighted nav link.\n\n- **Scope:** The PR covers issue #3 only: a scroll-spy in `site/app.js`, a CSS rule in `site/style.css`, and a build-log entry. It touches no guardrail files, workflows, secrets…"
+    },
+    {
+      "label": "final",
+      "text": "I approved PR #4 and moved its label from `ai:changes-requested` to `ai:approved`. I posted an approval comment that explains why.\n\nI read the diff and the four screenshots, but I didn't run `npm run validate` or the scroll-spy itself. The screenshots are full-page captures, so they don't show the highlighted nav link.\n\n- **Scope:** The PR covers issue #3 only: a scroll-spy in `site/app.js`, a CSS rule in `site/style.css`, and a build-log entry. It touches no guardrail files, workflows, secrets or dependencies.\n- **Accessibility:** The active link gets `aria-current`, and that attribute drives the visual state. The orange accent is about 5:1 on the light background and higher in dark mode.…"
+    }
+  ],
+  "verdict": null
+}
