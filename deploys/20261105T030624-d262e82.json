@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "id": "20261105T030624-d262e82",
+  "sha": "d262e82057ffca04d90a829afc28e0f8b625f1f7",
+  "title": "Make the AI spend counters stand out with a hero tile and raised cards",
+  "pr": 9,
+  "status": "success",
+  "committedAt": "2026-11-05T14:06:14+11:00",
+  "startedAt": "2026-11-05T03:06:24Z",
+  "finishedAt": "2026-11-05T03:07:03.133Z",
+  "url": "https://ai-dev-deploy-demo.pages.dev",
+  "runUrl": "https://github.com/sgoodwin10/ai-dev-deploy-demo/actions/runs/41959466627"
+}
