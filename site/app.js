@@ -64,7 +64,7 @@
     ];
     items.forEach(function (it) {
       var val = h('span', { 'class': 'val', text: '—' });
-      var li = h('li', {}, [val, h('span', { 'class': 'lab', text: it[0] })]);
+      var li = h('li', it[0] === 'Spent on AI' ? { 'class': 'feature' } : {}, [val, h('span', { 'class': 'lab', text: it[0] })]);
       ul.appendChild(li);
       if (it[1] !== null) countUp(val, it[1], it[2]);
     });

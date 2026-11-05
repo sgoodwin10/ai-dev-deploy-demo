@@ -1,5 +1,12 @@
 [
   {
+    "date": "2026-11-05",
+    "issue": 8,
+    "role": "Developer",
+    "title": "Made the AI spend section stand out",
+    "summary": "We turned the plain strip of counters into a bolder block: the money spent on AI is now a huge inverted tile with an offset accent shadow, next to smaller raised cards for tokens, runs, PRs and days. Only layout and styling changed, so every number still comes straight from the generated data."
+  },
+  {
     "date": "2026-11-04",
     "issue": 5,
     "role": "Developer",
