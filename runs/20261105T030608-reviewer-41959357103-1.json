@@ -1,0 +1,40 @@
+{
+  "schema": 1,
+  "id": "20261105T030608-reviewer-41959357103-1",
+  "role": "reviewer",
+  "workflow": "AI Review",
+  "runId": 41959357103,
+  "runUrl": "https://github.com/sgoodwin10/ai-dev-deploy-demo/actions/runs/41959357103",
+  "recordedAt": "2026-11-05T03:06:08.096Z",
+  "issue": null,
+  "pr": 9,
+  "sha": "8e11580aa9fcadaebe10161f216abb6de2d9b4e0",
+  "conclusion": "success",
+  "model": "claude-sonnet-5-5",
+  "costUsd": 0.0628,
+  "durationMs": 18400,
+  "apiDurationMs": 14782,
+  "turns": 12,
+  "tokens": {
+    "input": 12,
+    "output": 1638,
+    "cacheRead": 117636,
+    "cacheWrite": 13775
+  },
+  "toolCalls": 7,
+  "toolCounts": {
+    "Bash": 3,
+    "Read": 4
+  },
+  "excerpts": [
+    {
+      "label": "opening",
+      "text": "I approved PR #9, posted the approval comment, and swapped the label to `ai:approved`.\n\nI couldn't check the screenshots closely. The full-page PNGs were too tall to read at the size they displayed, and I was denied permission to crop them. I judged the new counters from the CSS and only a thumbnail-scale look at the screenshots, so the comment says that.\n\n- **Rules:** the PR is scoped to issue #8: a one-line `feature` class in `site/app.js`, CSS-only restyling in `site/style.css`, and a build-…"
+    },
+    {
+      "label": "final",
+      "text": "I approved PR #9, posted the approval comment, and swapped the label to `ai:approved`.\n\nI couldn't check the screenshots closely. The full-page PNGs were too tall to read at the size they displayed, and I was denied permission to crop them. I judged the new counters from the CSS and only a thumbnail-scale look at the screenshots, so the comment says that.\n\n- **Rules:** the PR is scoped to issue #8: a one-line `feature` class in `site/app.js`, CSS-only restyling in `site/style.css`, and a build-log entry. It touches no guardrail files and adds no secrets. The numbers still come from the generated data.\n- **Contrast and layout:** the hero tile inverts foreground and background, so contrast ho…"
+    }
+  ],
+  "verdict": null
+}
